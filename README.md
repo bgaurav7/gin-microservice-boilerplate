@@ -143,14 +143,19 @@ gin-microservice-boilerplate/
    - Or use a cloud provider like Neon (https://neon.tech) for production
    - Configuration is automatically loaded from the appropriate config file (dev.yaml or prod.yaml)
 
-4. Run the application with live reload:
+4. Run database migrations:
+   ```bash
+   make migrate
+   ```
+   This will apply any pending migrations to your database.
+
+5. Run the application with live reload:
    ```bash
    make run
    ```
    
-   The application will automatically:
+   The application will:
    - Connect to the PostgreSQL database
-   - Apply migrations from the `migrations` folder
    - Start the HTTP server
 
 5. Access the API at http://localhost:8080
@@ -218,9 +223,20 @@ Edit these files to add your SQL statements.
 
 #### Migration Execution
 
-Migrations are automatically applied when the application starts. The application will:
+Migrations are handled separately from application startup using the `make migrate` command. This follows best practices for production environments by:
 
-1. Connect to the database
+1. Separating database schema changes from application deployment
+2. Avoiding race conditions in multi-instance deployments
+3. Allowing for controlled migration execution and rollback
+
+To run migrations:
+
+```bash
+make migrate
+```
+
+This command will:
+1. Connect to the database using the configuration from your environment-specific YAML file
 2. Apply any pending migrations from the `migrations` directory
 3. Log the migration status
 

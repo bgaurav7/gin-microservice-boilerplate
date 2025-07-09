@@ -49,13 +49,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Run database migrations
-	migrator := db.NewMigrator(&cfg.Database, log, database)
-	if err := migrator.Run(); err != nil {
-		log.Error("Failed to run database migrations", map[string]interface{}{"error": err.Error()})
-		os.Exit(1)
-	}
-
 	// Create router
 	router := delivery.NewRouter(log, database)
 
