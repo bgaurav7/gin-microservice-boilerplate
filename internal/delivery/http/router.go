@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http/middleware"
+	"github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http/v1"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/db"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/logger"
 	"github.com/gin-gonic/gin"
@@ -69,4 +70,8 @@ func (r *Router) registerRoutes() {
 
 		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
+
+	// API v1 routes
+	apiV1 := r.engine.Group("/api/v1")
+	v1.RegisterRoutes(apiV1, r.db, r.logger)
 }

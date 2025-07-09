@@ -1,4 +1,4 @@
-.PHONY: run build test lint clean
+.PHONY: run build test lint clean migrate
 
 # Default target
 all: build
@@ -39,3 +39,14 @@ lint:
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf bin tmp
+
+# Run database migrations
+migrate:
+	@echo "Running database migrations..."
+	@if command -v migrate > /dev/null; then \
+		migrate -path ./migrations -database "$(shell go run cmd/server/main.go -dsn)" up; \
+	else \
+		echo "golang-migrate is not installed. Installing..."; \
+		go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest; \
+		$(GOPATH)/bin/migrate -path ./migrations -database "$(shell go run cmd/server/main.go -dsn)" up || ~/go/bin/migrate -path ./migrations -database "$(shell go run cmd/server/main.go -dsn)" up; \
+	fi

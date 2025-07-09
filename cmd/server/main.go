@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -16,11 +17,21 @@ import (
 )
 
 func main() {
+	// Check if -dsn flag is provided
+	printDSN := flag.Bool("dsn", false, "Print the database connection string and exit")
+	flag.Parse()
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
 		fmt.Printf("Failed to load configuration: %v\n", err)
 		os.Exit(1)
+	}
+	
+	// If -dsn flag is provided, print the DSN and exit
+	if *printDSN {
+		fmt.Print(cfg.Database.DSN())
+		os.Exit(0)
 	}
 
 	// Initialize logger
