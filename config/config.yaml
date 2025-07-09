@@ -22,3 +22,13 @@ database:
   max_idle_conns: 10
   max_open_conns: 100
   conn_max_lifetime: 3600 # seconds
+
+auth:
+  dex_url: "http://localhost:5556/dex"
+  client_id: "frontend"
+  client_secret: "frontend-secret"
+  redirect_uri: "http://localhost:8080/auth/callback"
+  # GitHub OAuth credentials should be set in environment-specific config files
+  github_client_id: ""
+  github_client_secret: ""
+  superadmin_email: "admin@example.com"

@@ -50,7 +50,7 @@ func main() {
 	}
 
 	// Create router
-	router := delivery.NewRouter(log, database)
+	router := delivery.NewRouter(log, database, cfg)
 
 	// Create HTTP server
 	server := &http.Server{

@@ -15,6 +15,7 @@ type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Logger   logger.Config  `mapstructure:"logger"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Auth     AuthConfig     `mapstructure:"auth"`
 }
 
 // AppConfig represents the application configuration
@@ -43,6 +44,17 @@ type DatabaseConfig struct {
 	MaxIdleConns    int    `mapstructure:"max_idle_conns"`
 	MaxOpenConns    int    `mapstructure:"max_open_conns"`
 	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime"`
+}
+
+// AuthConfig represents the authentication configuration
+type AuthConfig struct {
+	DexURL         string `mapstructure:"dex_url"`
+	ClientID       string `mapstructure:"client_id"`
+	ClientSecret   string `mapstructure:"client_secret"`
+	RedirectURI    string `mapstructure:"redirect_uri"`
+	GitHubClientID string `mapstructure:"github_client_id"`
+	GitHubClientSecret string `mapstructure:"github_client_secret"`
+	SuperAdminEmail string `mapstructure:"superadmin_email"`
 }
 
 // Load loads the configuration from the config file and environment variables
@@ -103,6 +115,13 @@ func Load() (*Config, error) {
 	baseConfig.BindEnv("database.max_idle_conns", "DB_MAX_IDLE_CONNS")
 	baseConfig.BindEnv("database.max_open_conns", "DB_MAX_OPEN_CONNS")
 	baseConfig.BindEnv("database.conn_max_lifetime", "DB_CONN_MAX_LIFETIME")
+	baseConfig.BindEnv("auth.dex_url", "DEX_URL")
+	baseConfig.BindEnv("auth.client_id", "CLIENT_ID")
+	baseConfig.BindEnv("auth.client_secret", "CLIENT_SECRET")
+	baseConfig.BindEnv("auth.redirect_uri", "REDIRECT_URI")
+	baseConfig.BindEnv("auth.github_client_id", "GITHUB_CLIENT_ID")
+	baseConfig.BindEnv("auth.github_client_secret", "GITHUB_CLIENT_SECRET")
+	baseConfig.BindEnv("auth.superadmin_email", "SUPERADMIN_EMAIL")
 
 	// Unmarshal configuration
 	var config Config
