@@ -1,0 +1,12 @@
+app:
+  name: "go-microservice-boilerplate"
+  environment: "development"
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 10  # seconds
+  write_timeout: 10 # seconds
+
+logger:
+  level: "info"  # debug, info, warn, error
