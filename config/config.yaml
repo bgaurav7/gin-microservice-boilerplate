@@ -1,6 +1,6 @@
 app:
-  name: "go-microservice-boilerplate"
-  environment: "development"
+  name: "gin-microservice-boilerplate"
+  environment: "dev"
 
 server:
   host: "0.0.0.0"
@@ -10,3 +10,15 @@ server:
 
 logger:
   level: "info"  # debug, info, warn, error
+
+database:
+  driver: postgres
+  host: localhost
+  port: 5432
+  username: postgres
+  password: postgres
+  name: microservice
+  sslmode: disable
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600 # seconds

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http/middleware"
+	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/db"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -12,10 +13,11 @@ import (
 type Router struct {
 	engine *gin.Engine
 	logger *logger.Logger
+	db     *db.Database
 }
 
 // NewRouter creates a new HTTP router
-func NewRouter(logger *logger.Logger) *Router {
+func NewRouter(logger *logger.Logger, database *db.Database) *Router {
 	// Set Gin mode
 	gin.SetMode(gin.ReleaseMode)
 
@@ -30,6 +32,7 @@ func NewRouter(logger *logger.Logger) *Router {
 	router := &Router{
 		engine: engine,
 		logger: logger,
+		db:     database,
 	}
 
 	// Register routes
@@ -53,5 +56,17 @@ func (r *Router) registerRoutes() {
 	// Health check
 	r.engine.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	// Readiness check
+	r.engine.GET("/readyz", func(c *gin.Context) {
+		// Check database connection
+		if err := r.db.Ping(); err != nil {
+			r.logger.Error("Database connection failed", map[string]interface{}{"error": err.Error()})
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready", "reason": "database connection failed"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
 }

@@ -1,0 +1,8 @@
+# Production environment overrides
+
+app:
+  environment: prod
+
+server:
+  read_timeout: 30
+  write_timeout: 30

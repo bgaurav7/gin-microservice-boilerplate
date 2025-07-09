@@ -1,4 +1,4 @@
-# Go Microservice Boilerplate
+# Gin Microservice Boilerplate
 
 A production-ready Go microservice boilerplate with clean architecture, versioned APIs, RBAC, OIDC, and more.
 
@@ -8,6 +8,12 @@ A production-ready Go microservice boilerplate with clean architecture, versione
 - **Clean Architecture** with layers: domain, usecase, delivery (HTTP), infrastructure
 - **Dependency Injection** via constructor pattern
 - **Interface-first design** for testability
+
+### Database
+- **PostgreSQL** integration with Neon (or any PostgreSQL provider)
+- **GORM ORM** for database operations and model management
+- **Golang-migrate** for SQL schema migrations
+- Database health check via `/readyz` endpoint
 
 ### Core Libraries
 - `gin-gonic/gin` for HTTP routing
@@ -40,7 +46,7 @@ A production-ready Go microservice boilerplate with clean architecture, versione
 ## Project Structure
 
 ```
-go-microservice-boilerplate/
+gin-microservice-boilerplate/
 ├── cmd/
 │   └── server/
 │       └── main.go                      # App bootstrap (logger, router, DI)
@@ -119,27 +125,65 @@ go-microservice-boilerplate/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/go-microservice-boilerplate.git
-   cd go-microservice-boilerplate
+   git clone https://github.com/yourusername/gin-microservice-boilerplate.git
+   cd gin-microservice-boilerplate
    ```
 
-2. Create a `.env` file from the example:
+2. Choose your environment configuration:
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   # For development environment (default)
+   export APP_ENVIRONMENT=dev
+   
+   # For production environment
+   export APP_ENVIRONMENT=prod
    ```
 
-3. Start the dependencies using Docker Compose:
-   ```bash
-   docker-compose up -d postgres dex
-   ```
+3. Set up your PostgreSQL database:
+   - You can use a local PostgreSQL instance for development
+   - Or use a cloud provider like Neon (https://neon.tech) for production
+   - Configuration is automatically loaded from the appropriate config file (dev.yaml or prod.yaml)
 
 4. Run the application with live reload:
    ```bash
    make run
    ```
+   
+   The application will automatically:
+   - Connect to the PostgreSQL database
+   - Apply migrations from the `migrations` folder
+   - Start the HTTP server
 
 5. Access the API at http://localhost:8080
+
+   Available endpoints:
+   - `/` - Welcome message
+   - `/healthz` - Health check endpoint (returns 200 OK if the service is running)
+   - `/readyz` - Readiness check endpoint (returns 200 OK if the database connection is healthy, 503 Service Unavailable otherwise)
+
+### Configuration
+
+This project uses a layered configuration system with environment-specific YAML files. The configuration files are located in the `config` directory:
+
+- `config.yaml` - Common configuration shared across all environments
+- `dev.yaml` - Development environment-specific configuration
+- `prod.yaml` - Production environment-specific configuration
+
+The application first loads the common configuration from `config.yaml`, then merges the environment-specific configuration on top of it based on the `APP_ENVIRONMENT` environment variable. If not set, it defaults to `dev`.
+
+The configuration loading process follows this order of precedence (highest to lowest):
+
+1. Environment variables
+2. Environment-specific YAML file (`dev.yaml` or `prod.yaml`)
+3. Common configuration file (`config.yaml`)
+
+You can override any configuration value using environment variables. For example:
+
+```bash
+export APP_ENVIRONMENT=prod
+export DB_HOST=my-custom-db-host.example.com
+```
+
+This will load the common configuration, merge the production configuration on top, and then override the `database.host` value with `my-custom-db-host.example.com`.
 
 ### Using Make Commands
 
@@ -150,13 +194,43 @@ go-microservice-boilerplate/
 - `make migrate` - Run database migrations
 - `make swagger` - Generate Swagger documentation
 
+### Database Migrations
+
+This project uses [golang-migrate](https://github.com/golang-migrate/migrate) for database migrations. 
+
+#### Generating Migration Files
+
+To generate a new migration file:
+
+```bash
+# Install golang-migrate CLI if not already installed
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# Generate a new migration file
+~/go/bin/migrate create -ext sql -dir migrations -seq your_migration_name
+```
+
+This will create two files:
+- `migrations/NNNNNN_your_migration_name.up.sql` - For applying the migration
+- `migrations/NNNNNN_your_migration_name.down.sql` - For reverting the migration
+
+Edit these files to add your SQL statements.
+
+#### Migration Execution
+
+Migrations are automatically applied when the application starts. The application will:
+
+1. Connect to the database
+2. Apply any pending migrations from the `migrations` directory
+3. Log the migration status
+
 ### Docker
 
 Build and run the application using Docker:
 
 ```bash
-docker build -t go-microservice-boilerplate .
-docker run -p 8080:8080 --env-file .env go-microservice-boilerplate
+docker build -t gin-microservice-boilerplate .
+docker run -p 8080:8080 --env-file .env gin-microservice-boilerplate
 ```
 
 Or use Docker Compose to run the entire stack:

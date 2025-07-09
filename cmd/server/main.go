@@ -11,6 +11,7 @@ import (
 
 	"github.com/bgaurav7/gin-microservice-boilerplate/config"
 	delivery "github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http"
+	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/db"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/logger"
 )
 
@@ -30,8 +31,22 @@ func main() {
 	}
 	defer log.Sync()
 
+	// Initialize database connection
+	database, err := db.NewDatabase(&cfg.Database, log)
+	if err != nil {
+		log.Error("Failed to connect to database", map[string]interface{}{"error": err.Error()})
+		os.Exit(1)
+	}
+
+	// Run database migrations
+	migrator := db.NewMigrator(&cfg.Database, log, database)
+	if err := migrator.Run(); err != nil {
+		log.Error("Failed to run database migrations", map[string]interface{}{"error": err.Error()})
+		os.Exit(1)
+	}
+
 	// Create router
-	router := delivery.NewRouter(log)
+	router := delivery.NewRouter(log, database)
 
 	// Create HTTP server
 	server := &http.Server{
