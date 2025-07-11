@@ -1,10 +1,11 @@
+# Build stage
 FROM golang:1.24-alpine AS builder
 
-# Set working directory
-WORKDIR /app
-
-# Install build dependencies
+# Install dependencies
 RUN apk add --no-cache git
+
+# Set working directory
+WORKDIR /go/src/app
 
 # Copy go.mod and go.sum files
 COPY go.mod go.sum ./
@@ -16,26 +17,23 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/server ./cmd/server
 
-# Create a minimal image
-FROM alpine:latest
+# Runtime stage
+FROM alpine:3.19
 
-# Set working directory
-WORKDIR /app
-
-# Install runtime dependencies
+# Install CA certificates for HTTPS
 RUN apk --no-cache add ca-certificates tzdata
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/server .
+COPY --from=builder /go/bin/server /server
 
 # Copy configuration files
-COPY --from=builder /app/config ./config
-COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /go/src/app/config /config
+COPY --from=builder /go/src/app/migrations /migrations
 
 # Expose the application port
 EXPOSE 8080
 
 # Run the application
-CMD ["./server"]
+CMD ["/server"]
