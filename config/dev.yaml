@@ -2,15 +2,3 @@
 
 logger:
   level: debug
-
-database:
-  driver: postgres
-  host: ep-holy-frog-a2yntush-pooler.eu-central-1.aws.neon.tech
-  port: 5432
-  username: neondb_owner
-  password: npg_YqK8i7Lunkmh
-  name: neondb
-  sslmode: require
-  max_idle_conns: 10
-  max_open_conns: 100
-  conn_max_lifetime: 3600
