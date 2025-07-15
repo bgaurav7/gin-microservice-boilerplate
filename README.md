@@ -22,7 +22,6 @@ A production-ready Go microservice boilerplate with clean architecture, versione
 - `spf13/viper` for configuration (YAML + ENV)
 - `uber-go/zap` for JSON-only logging
 - `casbin/casbin/v2` for RBAC
-- `coreos/dex` for OIDC GitHub SSO
 - `stretchr/testify` for testing
 - `air-verse/air` for live reload
 - `swaggo/swag` + `gin-swagger` for OpenAPI docs
@@ -37,7 +36,6 @@ A production-ready Go microservice boilerplate with clean architecture, versione
 
 ### Infrastructure
 - PostgreSQL database with GORM
-- Dex OIDC GitHub login with static superadmin email
 - Structured JSON logging with trace IDs
 - OpenTelemetry tracing
 - Docker and Kubernetes deployment
@@ -333,6 +331,50 @@ The auth middleware injects these values into the Gin context, making them avail
 ### Superadmin Access
 
 Users with email matching the `auth.superadmin_email` config value are automatically granted superadmin privileges. This is checked by the auth middleware during token validation.
+
+### Role-Based Access Control (RBAC)
+
+The application uses Casbin for Role-Based Access Control (RBAC) to restrict access to resources based on user roles.
+
+#### RBAC Configuration
+
+1. **Model Definition**:
+   - Located at `internal/infrastructure/rbac/model.conf`
+   - Defines the RBAC model with subjects (users), objects (resources), and actions (HTTP methods)
+
+2. **Policy Rules**:
+   - Located at `internal/infrastructure/rbac/policy.csv`
+   - Contains role definitions and permissions in the format:
+     - `p, role, resource, action` (permission rule)
+     - `g, user_email, role` (role assignment)
+
+3. **Example Policy**:
+   ```csv
+   p, admin, /api/v1/todos, GET
+   p, admin, /api/v1/todos, POST
+   p, user, /api/v1/todos, GET
+   g, alice@example.com, admin
+   g, bob@example.com, user
+   ```
+
+#### Access Control Flow
+
+1. **Authentication**: JWT middleware authenticates the user and sets `userEmail` in the context
+2. **Authorization**: RBAC middleware checks if the user has permission to access the requested resource
+3. **Superadmin Override**: Users with the configured superadmin email bypass RBAC checks
+4. **Policy Enforcement**: For regular users, access is granted only if a matching policy rule exists
+
+#### Adding New Roles and Permissions
+
+To add new roles or permissions, edit the `policy.csv` file:
+
+```csv
+# Add a new permission rule
+p, manager, /api/v1/users, GET
+
+# Assign a user to a role
+g, carol@example.com, manager
+```
 
 ## License
 

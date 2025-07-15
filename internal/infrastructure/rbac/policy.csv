@@ -1,0 +1,5 @@
+p, admin, /api/v1/todos, GET
+p, admin, /api/v1/todos, POST
+p, user, /api/v1/todos, GET
+g, alice@example.com, admin
+g, bob@example.com, user

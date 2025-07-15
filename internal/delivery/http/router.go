@@ -21,6 +21,7 @@ type Router struct {
 	tokenService   *jwt.TokenService
 	config         *config.Config
 	authMiddleware *middleware.AuthMiddleware
+	rbacMiddleware *middleware.RBACMiddleware
 }
 
 // NewRouter creates a new HTTP router
@@ -41,6 +42,13 @@ func NewRouter(logger *logger.Logger, database *db.Database, cfg *config.Config)
 	// Create auth middleware
 	authMiddleware := middleware.NewAuthMiddleware(tokenService, logger, &cfg.Auth)
 
+	// Create RBAC middleware
+	rbacMiddleware, err := middleware.NewRBACMiddleware(logger, &cfg.Auth)
+	if err != nil {
+		logger.Error("Failed to create RBAC middleware", map[string]interface{}{"error": err.Error()})
+		// Continue without RBAC if it fails to initialize
+	}
+
 	// Create router
 	router := &Router{
 		engine:         engine,
@@ -49,6 +57,7 @@ func NewRouter(logger *logger.Logger, database *db.Database, cfg *config.Config)
 		tokenService:   tokenService,
 		config:         cfg,
 		authMiddleware: authMiddleware,
+		rbacMiddleware: rbacMiddleware,
 	}
 
 	// Add auth middleware
@@ -93,8 +102,17 @@ func (r *Router) registerRoutes() {
 	authHandler := handler.NewAuthHandler(r.tokenService, r.logger, &r.config.Auth)
 	r.engine.POST("/auth", authHandler.Authenticate)
 
-	// API v1 routes - protected by auth middleware
+	// API v1 routes - protected by auth middleware and RBAC
 	apiV1 := r.engine.Group("/api/v1")
 	apiV1.Use(r.authMiddleware.RequireAuthentication())
+	
+	// Apply RBAC middleware if available
+	if r.rbacMiddleware != nil {
+		apiV1.Use(r.rbacMiddleware.Authorize())
+		r.logger.Info("RBAC middleware applied to /api/v1 routes", nil)
+	} else {
+		r.logger.Warn("RBAC middleware not available, skipping RBAC enforcement", nil)
+	}
+	
 	v1.RegisterRoutes(apiV1, r.db, r.logger)
 }
