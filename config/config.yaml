@@ -27,3 +27,7 @@ auth:
   jwt_secret: "supersecretkey"
   jwt_expiry_hours: 1
   superadmin_email: "admin@example.com"
+
+rbac:
+  model_path: "/app/internal/infrastructure/rbac/model.conf"
+  policy_path: "/app/internal/infrastructure/rbac/policy.csv"

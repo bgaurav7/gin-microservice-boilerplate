@@ -16,6 +16,7 @@ type Config struct {
 	Logger   logger.Config  `mapstructure:"logger"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Auth     AuthConfig     `mapstructure:"auth"`
+	RBAC     RBACConfig     `mapstructure:"rbac"`
 }
 
 // AppConfig represents the application configuration
@@ -51,6 +52,12 @@ type AuthConfig struct {
 	JWTSecret      string `mapstructure:"jwt_secret"`
 	JWTExpiryHours int    `mapstructure:"jwt_expiry_hours"`
 	SuperAdminEmail string `mapstructure:"superadmin_email"`
+}
+
+// RBACConfig represents the RBAC configuration
+type RBACConfig struct {
+	ModelPath  string `mapstructure:"model_path"`
+	PolicyPath string `mapstructure:"policy_path"`
 }
 
 // Load loads the configuration from the config file and environment variables

@@ -60,7 +60,7 @@ func NewRouter(logger *logger.Logger, database *db.Database, cfg *config.Config)
 		rbacMiddleware: rbacMiddleware,
 	}
 
-	// Add auth middleware
+	// Apply auth middleware globally for JWT parsing
 	engine.Use(authMiddleware.Authenticate())
 
 	// Register routes
@@ -105,7 +105,7 @@ func (r *Router) registerRoutes() {
 	// API v1 routes - protected by auth middleware and RBAC
 	apiV1 := r.engine.Group("/api/v1")
 	apiV1.Use(r.authMiddleware.RequireAuthentication())
-	
+
 	// Apply RBAC middleware if available
 	if r.rbacMiddleware != nil {
 		apiV1.Use(r.rbacMiddleware.Authorize())
@@ -113,6 +113,6 @@ func (r *Router) registerRoutes() {
 	} else {
 		r.logger.Warn("RBAC middleware not available, skipping RBAC enforcement", nil)
 	}
-	
+
 	v1.RegisterRoutes(apiV1, r.db, r.logger)
 }
