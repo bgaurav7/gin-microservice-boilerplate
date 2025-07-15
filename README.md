@@ -275,34 +275,41 @@ Swagger documentation is available at `/swagger/index.html` when the application
 
 ## Authentication
 
-The application uses [Dex](https://dexidp.io/) for OIDC authentication with GitHub as an identity provider. This enables users to log in using their GitHub accounts and receive JWT tokens containing their identity information.
+The application uses a simple JWT-based authentication system. This is a stateless authentication mechanism that issues signed JWT tokens containing user identity information.
 
 ### Setup
 
-1. **Create a GitHub OAuth Application**:
-   - Go to GitHub Developer Settings: https://github.com/settings/developers
-   - Create a new OAuth App with:
-     - Homepage URL: `http://localhost:8080`
-     - Authorization callback URL: `http://localhost:5556/dex/callback`
-   - Note your Client ID and Client Secret
-
-2. **Configure Environment Variables**:
-   ```bash
-   export GITHUB_CLIENT_ID=your_github_client_id
-   export GITHUB_CLIENT_SECRET=your_github_client_secret
+1. **Configure JWT Secret and Expiry**:
+   - Edit `config/config.yaml` or set environment variables:
+   ```yaml
+   auth:
+     jwt_secret: "supersecretkey"
+     jwt_expiry_hours: 1
+     superadmin_email: "admin@example.com"
    ```
 
-3. **Update Superadmin Email** (optional):
-   - Edit `config/dev.yaml` to set your email as superadmin
+2. **Set Superadmin Email** (optional):
+   - Edit `config/config.yaml` or set the `SUPERADMIN_EMAIL` environment variable to grant a specific email superadmin privileges
 
 ### Authentication Flow
 
-1. User navigates to `/auth/login`
-2. User is redirected to Dex login page
-3. User selects GitHub and authenticates
-4. User is redirected back to `/auth/callback`
-5. Application verifies the token and returns a JWT
-6. Frontend stores the JWT and includes it in subsequent API requests
+> **Note:** This is a simplified authentication system for development and testing purposes only. In a production environment, this should be replaced with a proper authentication solution that includes secure password handling, user registration, and additional security measures as per your specific requirements.
+
+1. Client sends a POST request to `/auth` with email:
+   ```bash
+   curl -X POST http://localhost:8080/auth \
+     -H "Content-Type: application/json" \
+     -d '{"email":"user@example.com"}'
+   ```
+
+2. Server validates the request and returns a JWT token:
+   ```json
+   {
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   }
+   ```
+
+3. Client includes this token in subsequent API requests
 
 ### Protected Endpoints
 
@@ -315,19 +322,17 @@ Authorization: Bearer your_jwt_token
 ### User Identity
 
 The JWT token contains the following claims:
-- `email`: User's email address
-- `sub`: Unique subject identifier
-- `name`: User's name
+- `sub`: User's email address (used as the subject identifier)
+- `exp`: Token expiration time (default: 1 hour)
+- `iat`: Token issue time
 
 The auth middleware injects these values into the Gin context, making them available to handlers via:
 - `c.Get("userEmail")` - User's email address
-- `c.Get("userID")` - User's subject identifier
-- `c.Get("userName")` - User's name
 - `c.Get("isSuperAdmin")` - Boolean indicating if user is a superadmin
 
 ### Superadmin Access
 
-Users with email matching the `auth.superadmin_email` config value are automatically granted superadmin privileges.
+Users with email matching the `auth.superadmin_email` config value are automatically granted superadmin privileges. This is checked by the auth middleware during token validation.
 
 ## License
 

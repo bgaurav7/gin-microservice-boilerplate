@@ -6,20 +6,20 @@ import (
 	"github.com/bgaurav7/gin-microservice-boilerplate/config"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http/handler"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http/middleware"
-	"github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http/v1"
+	v1 "github.com/bgaurav7/gin-microservice-boilerplate/internal/delivery/http/v1"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/db"
-	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/dex"
+	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/jwt"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/logger"
 	"github.com/gin-gonic/gin"
 )
 
 // Router represents the HTTP router
 type Router struct {
-	engine     *gin.Engine
-	logger     *logger.Logger
-	db         *db.Database
-	dexClient  *dex.Client
-	config     *config.Config
+	engine         *gin.Engine
+	logger         *logger.Logger
+	db             *db.Database
+	tokenService   *jwt.TokenService
+	config         *config.Config
 	authMiddleware *middleware.AuthMiddleware
 }
 
@@ -35,25 +35,22 @@ func NewRouter(logger *logger.Logger, database *db.Database, cfg *config.Config)
 	engine.Use(gin.Recovery())
 	engine.Use(middleware.Logger(logger))
 
-	// Create Dex client
-	dexClient, err := dex.NewClient(&cfg.Auth, logger)
-	if err != nil {
-		logger.Error("Failed to create Dex client", map[string]interface{}{"error": err.Error()})
-	}
+	// Create JWT token service
+	tokenService := jwt.NewTokenService(&cfg.Auth)
 
 	// Create auth middleware
-	authMiddleware := middleware.NewAuthMiddleware(dexClient, logger, &cfg.Auth)
+	authMiddleware := middleware.NewAuthMiddleware(tokenService, logger, &cfg.Auth)
 
 	// Create router
 	router := &Router{
-		engine:     engine,
-		logger:     logger,
-		db:         database,
-		dexClient:  dexClient,
-		config:     cfg,
+		engine:         engine,
+		logger:         logger,
+		db:             database,
+		tokenService:   tokenService,
+		config:         cfg,
 		authMiddleware: authMiddleware,
 	}
-	
+
 	// Add auth middleware
 	engine.Use(authMiddleware.Authenticate())
 
@@ -93,12 +90,8 @@ func (r *Router) registerRoutes() {
 	})
 
 	// Auth routes
-	authHandler := handler.NewAuthHandler(r.dexClient, r.logger, &r.config.Auth)
-	authGroup := r.engine.Group("/auth")
-	{
-		authGroup.GET("/login", authHandler.Login)
-		authGroup.GET("/callback", authHandler.Callback)
-	}
+	authHandler := handler.NewAuthHandler(r.tokenService, r.logger, &r.config.Auth)
+	r.engine.POST("/auth", authHandler.Authenticate)
 
 	// API v1 routes - protected by auth middleware
 	apiV1 := r.engine.Group("/api/v1")

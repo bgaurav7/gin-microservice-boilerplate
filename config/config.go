@@ -48,12 +48,8 @@ type DatabaseConfig struct {
 
 // AuthConfig represents the authentication configuration
 type AuthConfig struct {
-	DexURL         string `mapstructure:"dex_url"`
-	ClientID       string `mapstructure:"client_id"`
-	ClientSecret   string `mapstructure:"client_secret"`
-	RedirectURI    string `mapstructure:"redirect_uri"`
-	GitHubClientID string `mapstructure:"github_client_id"`
-	GitHubClientSecret string `mapstructure:"github_client_secret"`
+	JWTSecret      string `mapstructure:"jwt_secret"`
+	JWTExpiryHours int    `mapstructure:"jwt_expiry_hours"`
 	SuperAdminEmail string `mapstructure:"superadmin_email"`
 }
 
@@ -115,12 +111,8 @@ func Load() (*Config, error) {
 	baseConfig.BindEnv("database.max_idle_conns", "DB_MAX_IDLE_CONNS")
 	baseConfig.BindEnv("database.max_open_conns", "DB_MAX_OPEN_CONNS")
 	baseConfig.BindEnv("database.conn_max_lifetime", "DB_CONN_MAX_LIFETIME")
-	baseConfig.BindEnv("auth.dex_url", "DEX_URL")
-	baseConfig.BindEnv("auth.client_id", "CLIENT_ID")
-	baseConfig.BindEnv("auth.client_secret", "CLIENT_SECRET")
-	baseConfig.BindEnv("auth.redirect_uri", "REDIRECT_URI")
-	baseConfig.BindEnv("auth.github_client_id", "GITHUB_CLIENT_ID")
-	baseConfig.BindEnv("auth.github_client_secret", "GITHUB_CLIENT_SECRET")
+	baseConfig.BindEnv("auth.jwt_secret", "JWT_SECRET")
+	baseConfig.BindEnv("auth.jwt_expiry_hours", "JWT_EXPIRY_HOURS")
 	baseConfig.BindEnv("auth.superadmin_email", "SUPERADMIN_EMAIL")
 
 	// Unmarshal configuration

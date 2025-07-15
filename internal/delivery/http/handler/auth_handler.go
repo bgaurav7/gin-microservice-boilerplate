@@ -2,137 +2,101 @@ package handler
 
 import (
 	"net/http"
-	"time"
+	"regexp"
 
 	"github.com/bgaurav7/gin-microservice-boilerplate/config"
-	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/dex"
+	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/jwt"
 	"github.com/bgaurav7/gin-microservice-boilerplate/internal/infrastructure/logger"
 	"github.com/gin-gonic/gin"
 )
 
 // AuthHandler handles authentication-related requests
 type AuthHandler struct {
-	dexClient *dex.Client
-	logger    *logger.Logger
-	config    *config.AuthConfig
+	tokenService *jwt.TokenService
+	logger       *logger.Logger
+	config       *config.AuthConfig
+}
+
+// AuthRequest represents the authentication request
+type AuthRequest struct {
+	Email string `json:"email" binding:"required"`
+}
+
+// AuthResponse represents the authentication response
+type AuthResponse struct {
+	Token string `json:"token"`
 }
 
 // NewAuthHandler creates a new authentication handler
-func NewAuthHandler(dexClient *dex.Client, logger *logger.Logger, config *config.AuthConfig) *AuthHandler {
+func NewAuthHandler(tokenService *jwt.TokenService, logger *logger.Logger, config *config.AuthConfig) *AuthHandler {
 	return &AuthHandler{
-		dexClient: dexClient,
-		logger:    logger,
-		config:    config,
+		tokenService: tokenService,
+		logger:       logger,
+		config:       config,
 	}
 }
 
-// Login redirects the user to the Dex login page
-func (h *AuthHandler) Login(c *gin.Context) {
-	// Generate a random state for CSRF protection
-	state, err := h.dexClient.GenerateState()
-	if err != nil {
-		h.logger.Error("Failed to generate state", map[string]interface{}{
-			"error": err.Error(),
-		})
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to generate state",
-		})
-		return
-	}
-
-	// Store the state in a cookie
-	c.SetCookie("auth_state", state, int(time.Hour.Seconds()), "/", "", false, true)
-
-	// Redirect to the authorization URL
-	authURL := h.dexClient.GetAuthURL(state)
-	c.Redirect(http.StatusFound, authURL)
-}
-
-// Callback handles the callback from the Dex server
-func (h *AuthHandler) Callback(c *gin.Context) {
-	// Get the state from the cookie
-	state, err := c.Cookie("auth_state")
-	if err != nil {
-		h.logger.Error("Failed to get state cookie", map[string]interface{}{
+// Authenticate handles the authentication request
+// @Summary Authenticate a user
+// @Description Authenticate a user and return a JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body AuthRequest true "Authentication request"
+// @Success 200 {object} AuthResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /auth [post]
+func (h *AuthHandler) Authenticate(c *gin.Context) {
+	var req AuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Invalid request", map[string]interface{}{
 			"error": err.Error(),
 		})
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid state",
+			"error": "Invalid request",
 		})
 		return
 	}
 
-	// Verify the state
-	if c.Query("state") != state {
-		h.logger.Error("State mismatch", map[string]interface{}{
-			"expected": state,
-			"received": c.Query("state"),
-		})
+	// Validate email
+	if req.Email == "" {
+		h.logger.Error("Email is required", nil)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "State mismatch",
+			"error": "Email is required",
 		})
 		return
 	}
-
-	// Get the authorization code
-	code := c.Query("code")
-	if code == "" {
-		h.logger.Error("Authorization code is missing", nil)
+	
+	// Validate email format
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(req.Email) {
+		h.logger.Error("Invalid email format", nil)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Authorization code is missing",
+			"error": "Invalid email format",
 		})
 		return
 	}
 
-	// Exchange the code for tokens
-	token, err := h.dexClient.Exchange(c.Request.Context(), code)
+	// Generate token
+	token, err := h.tokenService.GenerateToken(req.Email)
 	if err != nil {
-		h.logger.Error("Failed to exchange code for token", map[string]interface{}{
+		h.logger.Error("Failed to generate token", map[string]interface{}{
 			"error": err.Error(),
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to exchange code for token",
+			"error": "Failed to generate token",
 		})
 		return
 	}
 
-	// Get the ID token
-	rawIDToken, ok := token.Extra("id_token").(string)
-	if !ok {
-		h.logger.Error("ID token is missing", nil)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "ID token is missing",
-		})
-		return
-	}
-
-	// Verify the ID token and extract user information
-	userInfo, err := h.dexClient.VerifyIDToken(c.Request.Context(), rawIDToken)
-	if err != nil {
-		h.logger.Error("Failed to verify ID token", map[string]interface{}{
-			"error": err.Error(),
-		})
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to verify ID token",
-		})
-		return
-	}
-
-	// Log the successful authentication
+	// Log successful authentication
 	h.logger.Info("User authenticated", map[string]interface{}{
-		"email": userInfo.Email,
-		"name":  userInfo.Name,
+		"email": req.Email,
 	})
 
-	// Return the token and user information
-	c.JSON(http.StatusOK, gin.H{
-		"token":     rawIDToken,
-		"tokenType": "Bearer",
-		"expiresIn": userInfo.Expiry - time.Now().Unix(),
-		"user": gin.H{
-			"email":   userInfo.Email,
-			"name":    userInfo.Name,
-			"subject": userInfo.Subject,
-		},
+	// Return token
+	c.JSON(http.StatusOK, AuthResponse{
+		Token: token,
 	})
 }
