@@ -37,8 +37,8 @@ func NewAuthHandler(tokenService *jwt.TokenService, logger *logger.Logger, confi
 }
 
 // Authenticate handles the authentication request
-// @Summary Authenticate a user
-// @Description Authenticate a user and return a JWT token
+// @Summary Authenticate user
+// @Description Authenticate a user and return a JWT token for API access
 // @Tags auth
 // @Accept json
 // @Produce json

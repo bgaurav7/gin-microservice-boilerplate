@@ -1,3 +1,20 @@
+//go:generate swag init -g ./cmd/server/main.go -o ./api/docs --parseDependency
+
+// @title Gin Microservice Boilerplate API
+// @version 1.0
+// @description Production-ready Gin microservice with versioned APIs, RBAC, OIDC.
+// @termsOfService https://example.com/terms
+// @contact.name Engineering
+// @contact.email dev@example.com
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+// @host localhost:8080
+// @BasePath /api/v1
+// @schemes http https
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 package main
 
 import (
