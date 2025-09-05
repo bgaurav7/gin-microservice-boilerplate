@@ -1,0 +1,162 @@
+basePath: /api/v1
+definitions:
+  internal_delivery_http_handler.AuthRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  internal_delivery_http_handler.AuthResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  internal_delivery_http_v1_handler.TodoCreateRequest:
+    properties:
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  internal_domain_model.Todo:
+    properties:
+      completed:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: dev@example.com
+    name: Engineering
+  description: Production-ready Gin microservice with versioned APIs, RBAC, OIDC.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://example.com/terms
+  title: Gin Microservice Boilerplate API
+  version: "1.0"
+paths:
+  /api/v1/todos:
+    get:
+      consumes:
+      - application/json
+      description: Get list of todos visible to the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_domain_model.Todo'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List todos
+      tags:
+      - todos
+    post:
+      consumes:
+      - application/json
+      description: Create a new todo entry
+      parameters:
+      - description: Todo payload
+        in: body
+        name: todo
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http_v1_handler.TodoCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_domain_model.Todo'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create todo
+      tags:
+      - todos
+  /auth:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return a JWT token for API access
+      parameters:
+      - description: Authentication request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http_handler.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_delivery_http_handler.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Authenticate user
+      tags:
+      - auth
+schemes:
+- http
+- https
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

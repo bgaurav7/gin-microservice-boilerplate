@@ -269,7 +269,87 @@ podman kube play deploy/k8s/deployment.yaml
 
 ## API Documentation
 
-Swagger documentation is available at `/swagger/index.html` when the application is running.
+### Swagger Documentation
+
+The application includes comprehensive Swagger (OpenAPI) documentation for all API endpoints. The documentation is automatically generated from code annotations and includes:
+
+- Complete API endpoint documentation
+- Request/response schemas
+- Authentication requirements
+- RBAC role mappings
+- Interactive API testing interface
+
+#### Accessing Swagger Documentation
+
+**Local Development:**
+```bash
+# Enable Swagger UI
+export ENABLE_SWAGGER=true
+export APP_ENVIRONMENT=dev
+
+# Start the application
+make run
+
+# Access Swagger UI at: http://localhost:8080/swagger/index.html
+```
+
+**Production Environment:**
+```bash
+# Enable Swagger with basic authentication
+export ENABLE_SWAGGER=true
+export APP_ENVIRONMENT=prod
+export SWAGGER_BASIC_AUTH_USERNAME=admin
+export SWAGGER_BASIC_AUTH_PASSWORD=your-secure-password
+
+# Access Swagger UI at: https://your-domain.com/swagger/index.html
+# (with basic auth credentials)
+```
+
+#### Security Considerations
+
+- **Default State:** Swagger UI is **disabled by default** for security
+- **Development:** Can be enabled without authentication for local development
+- **Production:** Requires explicit enabling AND basic authentication credentials
+- **Environment Variables:** Use `ENABLE_SWAGGER=true` to enable, `APP_ENVIRONMENT=prod` for production mode
+
+#### Regenerating Documentation
+
+To update the Swagger documentation after making API changes:
+
+```bash
+# Generate new documentation
+make swagger
+
+# Or use go generate
+go generate ./...
+
+# The documentation will be updated in ./api/docs/
+```
+
+#### CI/CD Integration
+
+The repository includes automated checks to ensure Swagger documentation stays up-to-date:
+
+- **GitHub Actions:** Automatically validates that generated docs match current code
+- **Pre-commit:** Run `make swagger` before committing API changes
+- **Build Pipeline:** Fails if documentation is out of sync with code
+
+#### API Endpoints Documentation
+
+All endpoints are documented with:
+- **Authentication:** JWT Bearer token requirements
+- **Authorization:** RBAC role-based access control
+- **Request/Response:** Complete schema definitions
+- **Error Handling:** Standardized error responses
+- **Examples:** Sample requests and responses
+
+**Available Endpoints:**
+- `GET /` - Welcome message
+- `GET /healthz` - Health check
+- `GET /readyz` - Readiness check (includes database connectivity)
+- `POST /auth` - JWT token authentication
+- `GET /api/v1/todos` - List todos (requires authentication + RBAC)
+- `POST /api/v1/todos` - Create todo (requires authentication + RBAC)
 
 ## Authentication
 

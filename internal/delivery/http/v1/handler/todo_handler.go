@@ -28,12 +28,15 @@ func NewTodoHandler(todoUsecase usecase.TodoUsecase, logger *logger.Logger) *Tod
 }
 
 // GetAll godoc
-// @Summary Get all todos
-// @Description Get all todos
+// @Summary List todos
+// @Description Get list of todos visible to the user
 // @Tags todos
 // @Accept json
 // @Produce json
-// @Success 200 {array} model.Todo
+// @Success 200 {array} internal_domain_model.Todo
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Security ApiKeyAuth
 // @Router /api/v1/todos [get]
 func (h *TodoHandler) GetAll(c *gin.Context) {
 	todos, err := h.todoUsecase.List(c.Request.Context())
@@ -49,14 +52,17 @@ func (h *TodoHandler) GetAll(c *gin.Context) {
 }
 
 // Create godoc
-// @Summary Create a new todo
-// @Description Create a new todo
+// @Summary Create todo
+// @Description Create a new todo entry
 // @Tags todos
 // @Accept json
 // @Produce json
-// @Param todo body TodoCreateRequest true "Todo object"
-// @Success 201 {object} model.Todo
-// @Failure 400 {object} map[string]string "Invalid request"
+// @Param todo body TodoCreateRequest true "Todo payload"
+// @Success 201 {object} internal_domain_model.Todo
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Security ApiKeyAuth
 // @Router /api/v1/todos [post]
 func (h *TodoHandler) Create(c *gin.Context) {
 	var req TodoCreateRequest

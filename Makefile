@@ -1,4 +1,4 @@
-.PHONY: run build test lint clean migrate
+.PHONY: run build test lint clean migrate swagger
 
 # Default target
 all: build
@@ -50,3 +50,15 @@ migrate:
 		go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest; \
 		$(GOPATH)/bin/migrate -path ./migrations -database "$(shell go run cmd/server/main.go -dsn)" up || ~/go/bin/migrate -path ./migrations -database "$(shell go run cmd/server/main.go -dsn)" up; \
 	fi
+
+# Generate Swagger documentation
+swagger:
+	@echo "Generating Swagger documentation..."
+	@if command -v swag > /dev/null; then \
+		swag init -g ./cmd/server/main.go -o ./api/docs --parseDependency; \
+	else \
+		echo "swag is not installed. Installing..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+		$(GOPATH)/bin/swag init -g ./cmd/server/main.go -o ./api/docs --parseDependency || ~/go/bin/swag init -g ./cmd/server/main.go -o ./api/docs --parseDependency; \
+	fi
+	@echo "Swagger documentation generated in ./api/docs/"
